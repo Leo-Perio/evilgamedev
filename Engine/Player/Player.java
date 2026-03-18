@@ -44,16 +44,16 @@ public class Player {
                 if (map.get((int)(pos_x), (int)(pos_y - dir_y * move_speed)) == 0) pos_y -= dir_y * move_speed;
                 break;
             case "LEFT":
-            	if (map.get((int)(pos_x - plane_x * move_speed), (int)(pos_y)) == 0) pos_x -= plane_x * move_speed;
-                if (map.get((int)(pos_x), (int)(pos_y + plane_y * move_speed)) == 0) pos_y -= plane_y * move_speed;
+                if (map.get((int)(pos_x - plane_x * move_speed), (int)(pos_y)) == 0) pos_x -= plane_x * move_speed;
+                if (map.get((int)(pos_x), (int)(pos_y - plane_y * move_speed)) == 0) pos_y -= plane_y * move_speed;
                 break;
             case "RIGHT":
-            	if (map.get((int)(pos_x + plane_x * move_speed), (int)(pos_y)) == 0) pos_x += plane_x * move_speed;
+                if (map.get((int)(pos_x - plane_x * move_speed), (int)(pos_y)) == 0) pos_x += plane_x * move_speed;
                 if (map.get((int)(pos_x), (int)(pos_y - plane_y * move_speed)) == 0) pos_y += plane_y * move_speed;
                 break;
         }
 
-        System.out.printf("Player is at (%.2f, %.2f)%n", pos_x, pos_y);
+        //System.out.printf("Player is at (%.2f, %.2f)%n", pos_x, pos_y);
     }
 
     // Rotations
@@ -76,15 +76,18 @@ public class Player {
     */
 
     public void Rotate(double angle) {
+        double cos_angle = Math.cos(angle);
+        double sin_angle = Math.sin(angle);
+
         // Rotate direction vector
         double old_dir_x = dir_x; // Temp variable to store the value of dir_x
-        dir_x = dir_x * Math.cos(angle) - dir_y * Math.sin(angle);
-        dir_y = old_dir_x * Math.sin(angle) + dir_y * Math.cos(angle);
+        dir_x = dir_x * cos_angle - dir_y * sin_angle;
+        dir_y = old_dir_x * sin_angle + dir_y * cos_angle;
 
         // Rotate camera plane
         double old_plane_x = plane_x; // Temp variable to store the value of plane_x
-        plane_x = plane_x * Math.cos(angle) - plane_y * Math.sin(angle);
-        plane_y = old_plane_x * Math.sin(angle) + plane_y * Math.cos(angle);
+        plane_x = plane_x * cos_angle - plane_y * sin_angle;
+        plane_y = old_plane_x * sin_angle + plane_y * cos_angle;
     }
 
     public void RotateLeft() {Rotate(-rot_speed);}

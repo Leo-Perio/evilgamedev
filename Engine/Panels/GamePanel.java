@@ -1,27 +1,27 @@
 package Engine.Panels;
 
-import javax.imageio.ImageIO;
 import javax.swing.*;
 import java.awt.*;
 import java.awt.event.*;
-import java.awt.image.BufferedImage;
-import java.io.File;
-import java.io.IOException;
 
+import Engine.Core.AudioHandler;
 import Engine.Core.GameMap;
+import Engine.Core.Utils.CONSTANTS;
 import Engine.Entities.Sprite;
+import Engine.Panels.Utilities.PanelCursor;
 import Engine.Player.Player;
 import Engine.Player.PlayerKeyHandler;
 import Engine.Player.PlayerMouseHandler;
 
 public class GamePanel extends JPanel implements Runnable {
-    private final int HEIGHT = 1080;
-    private final int WIDTH = 1920;
+    private int HEIGHT = CONSTANTS.HEIGHT;
+    private int WIDTH = CONSTANTS.WIDTH;
     
     private GameMap map;
     private Player player;
     private PlayerKeyHandler player_key;
     private PlayerMouseHandler player_mouse;
+    private AudioHandler audio_handler;
     private Robot robot;
 
     private float pitch;
@@ -31,10 +31,11 @@ public class GamePanel extends JPanel implements Runnable {
 
     private Sprite test;
 
-    public GamePanel() {
+    public GamePanel(AudioHandler audio_handler) {
         this.map = new GameMap();
         this.player = new Player(map);
         this.player_key = new PlayerKeyHandler();
+        this.audio_handler = audio_handler;
 
         this.sensitivity = 0.001f;
         this.pitch = 0;
@@ -46,16 +47,8 @@ public class GamePanel extends JPanel implements Runnable {
             this.robot = new Robot();
         } catch (AWTException e) {}
 
-        try {
-            File f = new File("Assets/Sprites/Goat.png");
-            BufferedImage img = ImageIO.read(f);
-
-            this.test = new Sprite(img, 6, 7);
-        } catch (IOException e) {
-            e.printStackTrace();
-            System.exit(1);
-        }
         setPreferredSize(new Dimension(WIDTH, HEIGHT));
+        setCursor(PanelCursor.GetCursor("INVISIBLE"));
         setBackground(Color.BLACK);
         setFocusable(true);
         addKeyListener(player_key);
@@ -92,7 +85,36 @@ public class GamePanel extends JPanel implements Runnable {
                 if (pitch < -90) pitch = -90;
                 */
             }
-            public void mouseDragged(MouseEvent e) {}
+            public void mouseDragged(MouseEvent e) {
+                if (recentering) {
+                    recentering = false;
+                    return;
+                }
+
+                int center_x = getWidth() / 2;
+                int center_y = getHeight() / 2;
+                
+                int dx = e.getX() - center_x;
+                int dy = e.getY() - center_y;
+
+                accum_dx += dx;
+
+                Point p = getLocationOnScreen();
+
+                int screen_center_x = p.x + getWidth() / 2;
+                int screen_center_y = p.y + getHeight() / 2;
+
+                recentering = true;
+                robot.mouseMove(screen_center_x, screen_center_y);
+
+                /*
+                This is to be used if we allow total mouse movement
+                pitch += dy * sensitivity;
+
+                if (pitch > 90) pitch = 90;
+                if (pitch < -90) pitch = -90;
+                */
+            }
         });
 
         new Thread(this).start();
@@ -121,6 +143,18 @@ public class GamePanel extends JPanel implements Runnable {
     }
 
     private void update() {
+        input();
+    }
+
+    protected void paintComponent(Graphics g) {
+        super.paintComponent(g);
+
+        raycast(g);
+    }
+
+    private void input() {
+        if (player_key.right && player_key.left || player_key.forward && player_key.backward) return;
+        if (player_key.forward && player_key.backward) return;
         if (player_key.forward) player.Move("FORWARD");
         if (player_key.left) player.Move("LEFT");
         if (player_key.right) player.Move("RIGHT");
@@ -132,10 +166,7 @@ public class GamePanel extends JPanel implements Runnable {
         accum_dx = 0;
     }
 
-    protected void paintComponent(Graphics g) {
-        super.paintComponent(g);
-
-        double[] zBuffer = new double[WIDTH];
+    private void raycast(Graphics g) {
         for (int x = 0; x < WIDTH; x++) {
             double camera_x = 2 * x / (double) WIDTH - 1;
             double ray_dir_x = player.dir_x + player.plane_x * camera_x;
@@ -186,8 +217,6 @@ public class GamePanel extends JPanel implements Runnable {
             if (side == 0) perp_wall_dist = (map_x - player.pos_x + (1 - step_x) / 2) / ray_dir_x;
             else perp_wall_dist = (map_y - player.pos_y + (1 - step_y) / 2) / ray_dir_y;
 
-            zBuffer[x] = perp_wall_dist; // Allows Sprites to hide behind walls
-
             int line_height = (int)(HEIGHT / perp_wall_dist);
             int draw_start = -line_height / 2 + HEIGHT / 2;
             int draw_end = line_height / 2 + HEIGHT / 2;
@@ -213,6 +242,5 @@ public class GamePanel extends JPanel implements Runnable {
 
             g.drawLine(x, draw_start, x, draw_end);
         }
-
     }
 }
