@@ -3,8 +3,17 @@ package Engine.Player;
 import java.awt.event.KeyEvent;
 import java.awt.event.KeyListener;
 
+import Engine.Core.GameManager;
+import Engine.Core.GameManager.GameState;
+
 public class PlayerKeyHandler implements KeyListener {
     public boolean forward, backward, left, right, arrow_left, arrow_right;
+
+    private GameManager manager;
+
+    public PlayerKeyHandler(GameManager manager) {
+        this.manager = manager;
+    }
 
     public void keyPressed(KeyEvent e) {
         int code = e.getKeyCode();
@@ -29,7 +38,7 @@ public class PlayerKeyHandler implements KeyListener {
                 arrow_left = true;
                 break;
             case KeyEvent.VK_ESCAPE:
-                System.exit(1);
+                manager.setState(GameState.PAUSED);
                 break;
         }
     }
